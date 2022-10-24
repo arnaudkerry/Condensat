@@ -21,7 +21,7 @@ char* encrypt(char* word, char* algorithm) {
     return "encrypted";
 }
 
-void fileEncrypt(char* filename, char* algorithm) {
+void fileEncrypt(char* filename, char* algorithm,FILE* fileout) {
     FILE* file = NULL;
     char line[MAX_LENGTH] = "";
     file = fopen(filename,"r+");
@@ -33,7 +33,11 @@ void fileEncrypt(char* filename, char* algorithm) {
                     *ptr = '\0';
                 }
             char* encrypted = encrypt(line,algorithm);
-            printf("%s\t%s\n",line,encrypted);
+            if(fileout != NULL) {
+                fprintf(fileout,"%s\t%s",line,encrypted);
+            } else {
+                printf("%s\t%s\n",line,encrypted);
+            }
         }
         fclose(file);
     } else {
@@ -56,10 +60,17 @@ char* chooseAlgorithm(int argc, char* argv) {
 
 void generateMode(int argc, char* argv[]) {
     char* filename = argv[2];
+    FILE* file = NULL;
     char* algorithm = chooseAlgorithm(argc,argv);
-    char* fileOut = NULL;
     //TODO : Faire l'option de sortie
-    fileEncrypt(filename,algorithm);
+    if(argc >= 6) {
+        if(strcmp(argv[1],"-out") == 0) {
+            file = fopen(argv[5],"w+");
+        } else {
+            printf("Bad option %s",argv[1]);
+        }
+    }
+    fileEncrypt(filename,algorithm,file);
 }
 
 void listMode(int argc, char* argv) {
