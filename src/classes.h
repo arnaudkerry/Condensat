@@ -1,3 +1,10 @@
+/**
+ * @brief Retranscription des hash en un format facilement imprimable et compréhensible
+ * 
+ * @param hash 
+ * @param length 
+ * @return unsigned* 
+ */
 unsigned char* bufHash(unsigned char * hash,int length) {
     unsigned char* buf = malloc(sizeof(unsigned char*) * 2 * length);
     memset(buf, 0x0, length*2);
@@ -9,6 +16,10 @@ unsigned char* bufHash(unsigned char * hash,int length) {
     return buf;
 }
 
+/**
+ * @brief Classe HASHSTRUCT, qui va former les éléments d'un arbre binaire de recherche
+ * 
+ */
 struct hashStruct {
     int length;
     unsigned char* hash;
@@ -19,11 +30,21 @@ struct hashStruct {
 };
 typedef struct hashStruct HashStruct;
 
+/**
+ * @brief Fonction de destruction des HASHSTRUCT lors du mode generate
+ * 
+ * @param h 
+ */
 void destroy_hash_generate(HashStruct * h) {
     free(h->buffered);
     free(h);
 }
 
+/**
+ * @brief Fonction de destruction des HASHSTRUCT créés lors du mode lookup
+ * 
+ * @param h 
+ */
 void destroy_hash_lookup(HashStruct * h) {
     free(h->hash);
     free(h->buffered);
@@ -35,6 +56,14 @@ void destroy_hash_lookup(HashStruct * h) {
     free(h);
 }
 
+/**
+ * @brief Constructeur des HASHSTRUCT en mode generate
+ * 
+ * @param hash 
+ * @param length 
+ * @param input 
+ * @return HashStruct* 
+ */
 HashStruct * hashstruct_constructor_generate(unsigned char* hash,int length,unsigned char* input) {
     HashStruct *h = malloc(sizeof(HashStruct));
     h->length = length;
@@ -46,6 +75,13 @@ HashStruct * hashstruct_constructor_generate(unsigned char* hash,int length,unsi
     return h;
 }
 
+/**
+ * @brief Constructeur des HASHSTRUCT en mode lookup
+ * 
+ * @param plain 
+ * @param hash 
+ * @return HashStruct* 
+ */
 HashStruct * hashstruct_constructor_lookup(unsigned char* plain,unsigned char* hash) {
     HashStruct *h = malloc(sizeof(HashStruct));
     h->length = strlen(hash);
@@ -60,76 +96,11 @@ HashStruct * hashstruct_constructor_lookup(unsigned char* plain,unsigned char* h
     return h;
 }
 
-void addRecurs(HashStruct* current, HashStruct* toAdd,int count) {
-    if(strcmp(current->plainWord,toAdd->plainWord) == 0) {
-        return;
-    }
-    if(current->buffered[count] > toAdd->buffered[count]) {
-    if(!current->right) {
-        current->right = toAdd;
-        return;
-    }
-    else {
-        current = current->right;
-        addRecurs(current,toAdd,0);
-        return;
-    }
-} else if (current->buffered[count] < toAdd->buffered[count]) {
-    if(!current->left) {
-        current->left = toAdd;
-        return;
-    }
-    else {
-        current = current->left;
-        addRecurs(current,toAdd,0);
-        return;
-    }
-    } else if(current->buffered[count] == toAdd->buffered[count]) {
-        addRecurs(current,toAdd,++count);
-        return;
-    }
-}
 
-void add(HashStruct** root,unsigned char* word,unsigned char* hash,int count,int k ) {
-    HashStruct* newHashStruct = hashstruct_constructor_lookup(word,hash);
-    if(!*root) {
-        *root = newHashStruct;
-        return;
-    }
-
-    HashStruct* current = *root;
-    if(strcmp(current->plainWord,newHashStruct->plainWord) == 0) {
-        return;
-    }
-    if(current->buffered[count] > newHashStruct->buffered[count]) {
-        if(!current->right) {
-            current->right = newHashStruct;
-            return;
-        }
-        else {
-            current = current->right;
-            addRecurs(current,newHashStruct,0);
-            return;
-        }
-    } else if (current->buffered[count] < newHashStruct->buffered[count]) {
-        if(!current->left) {
-            current->left = newHashStruct;
-            return;
-        }
-        else {
-            current = current->left;
-            addRecurs(current,newHashStruct,0);
-            return;
-        }
-    } else if (current->buffered[count] == newHashStruct->buffered[count]) {
-        addRecurs(current,newHashStruct,++count);
-        return;
-    }
-}
-
-
-
-
+/**
+ * @brief Class PARSER
+ * 
+ */
 typedef struct parser {
     //0 = true, 1 = False
     int isGenerate;
@@ -141,10 +112,20 @@ typedef struct parser {
     char* algorithm;
 } Parser;
 
+/**
+ * @brief Fonction de destruction de la class PARSER
+ * 
+ * @param p 
+ */
 void destroy_parser(Parser* p) {
     free(p);
 }
 
+/**
+ * @brief Constructeur de la class PARSER
+ * 
+ * @return Parser* 
+ */
 Parser * parser_constructor() {
     Parser *p = malloc(sizeof(Parser));
     p->isAlgorithm = 1;

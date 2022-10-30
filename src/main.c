@@ -3,117 +3,21 @@
 #include <string.h>
 #include <openssl/sha.h>
 #include "algorithms.h"
-
-#define MAX_LENGTH 1000
-
+#include "filehelper.h"
+/**
+ * @brief Affichage de l'aide d'utilisation
+ * 
+ */
 void displayHelp() {
     printf("Usage: ./main OPTION ... [FILE]...\n\n-g, --generate\tgenerate mode.\n-l, --lookup\tlookup mode.\n\n-g FILEIN [-out FILEOUT]:\nGenerate mode : Show the hash of the entries.\n-out FILEOUT : Stores the results into a file.\n-algo ALGO : The algorithm used to encrypt the words (default SHA256) [SHA256,SHA1,SHA512]\n\n -l FILEIN :\nLookup mode : Searching a plainword from a cipher (FILEIN will be used as the database)\n");
 }
 
 
-HashStruct * encrypt(unsigned char* word, unsigned char* algorithm) {
-    if(strcmp(algorithm,"SHA512") == 0) {
-        return sha512cryption(word);
-    } else if (strcmp(algorithm,"SHA1") == 0)
-    {
-        return sha1cryption(word);
-    } else if (strcmp(algorithm,"SHA256") == 0)
-    {
-        return sha256cryption(word);
-    } else {
-        printf("Algorithm not find... cryption with SHA256...");
-        return sha256cryption(word);
-    }
-}
-
-void fileEncrypt(Parser* parser) {
-    FILE* file = NULL;
-    FILE* fileout = NULL;
-    if(parser->fileOut)    
-        fileout = fopen(parser->fileOut,"w+");
-    unsigned char* line = malloc(sizeof(unsigned char) * MAX_LENGTH);
-    file = fopen(parser->fileIn,"r+");
-    if(file != NULL) {
-        while(fgets(line, MAX_LENGTH, file) != NULL) {
-            unsigned char *ptr = strchr(line, '\n');
-            if(ptr)
-                {
-                    *ptr = '\0';
-                }
-            HashStruct* encrypted = encrypt(line,parser->algorithm);
-            if(fileout != NULL) {
-                fprintf(fileout,"%s\t%s\n",line,encrypted->buffered);
-            } else {
-                printf("%s\t%s\n",line,encrypted->buffered);
-            }
-            destroy_hash_generate(encrypted);
-        }
-        fclose(file);
-        if(fileout)
-            fclose(fileout);
-        free(line);
-    } else {
-        printf("Impossible d'ouvrir le fichier\n");
-    }
-}
-
-void fileLoad(unsigned char* filename,HashStruct** root,int k) {
-    FILE* file = NULL;
-    unsigned char* word = NULL;
-    unsigned char* hash = NULL;
-    unsigned char line[MAX_LENGTH] = "";
-    file = fopen(filename,"r+");
-    if(file != NULL) {
-        while(fgets(line,MAX_LENGTH,file) != NULL) {
-            
-            unsigned char *ptr = strchr(line,'\n');
-            if(ptr)
-            {
-                *ptr = '\0';
-            }
-            for(int i = 0; i<= strlen(line); i++) {
-                if(line[i] == '\t') {
-                    line[i] = '\0';
-                    word = line;
-                    hash = line+1+i;
-                    break;
-                }
-            }
-            add(root,word,hash,0,k++);
-        }
-    }
-    fclose(file);
-}
-
-void searchRecurs(unsigned char* hash,HashStruct* root, int count) {
-    if(strcmp(hash,root->buffered) == 0) {
-        printf("The plainword for %s is %s\n",hash,root->plainWord);
-    } else if (hash[count] > root->buffered[count] && root->left)
-            searchRecurs(hash,root->left,0);
-        else if (hash[count] < root->buffered[count] && root->right)
-            searchRecurs(hash,root->right,0);
-        else if(hash[count] == root->buffered[count]) {
-            count++;
-            searchRecurs(hash,root,count);
-        }
-}
-
-void search(unsigned char* hash,HashStruct* root,int count) {
-    hash[strcspn(hash,"\n")] = 0;
-    if(strcmp(hash,root->buffered) == 0) {
-        printf("The plainword for %s is %s\n",hash,root->plainWord);
-    } else {
-        if(hash[count] > root->buffered[count] && root->left) {
-            searchRecurs(hash,root->left,0);
-        } else if (hash[count] < root->buffered[count] && root->right) {
-            searchRecurs(hash,root->right,0);
-        } else if(hash[count] == root->buffered[count]) {
-            count++;
-            searchRecurs(hash,root,count);
-        }
-    }
-}
-
+/**
+ * @brief Mode interactif => permet de boucler sur plusieurs recherches
+ * 
+ * @param root 
+ */
 void interactiveMode(HashStruct* root) {
     printf("<<<< Interactive mode >>>> (q for quit)\n");
     printf("Search plain for : ");
@@ -128,11 +32,14 @@ void interactiveMode(HashStruct* root) {
     }
 }
 
-
+/**
+ * @brief Mode lookup
+ * 
+ * @param parser 
+ */
 void lookup(Parser * parser) {
     HashStruct * root = NULL;
-    int k = 0;
-    fileLoad(parser->fileIn,&root,k);
+    fileLoad(parser->fileIn,&root);
     printf("Chargement terminé\n");
     while(1) {
         printf("wsh");
@@ -141,7 +48,11 @@ void lookup(Parser * parser) {
 }
 
 
-
+/**
+ * @brief Lancement du programme selon les options récupérées par le Parser
+ * 
+ * @param parser 
+ */
 void launch(Parser * parser) {
     if(parser->isGenerate == 0) {
         fileEncrypt(parser);
@@ -153,6 +64,13 @@ void launch(Parser * parser) {
     }
 }
 
+/**
+ * @brief Récupération et parsing des arguments en ligne de commande
+ * 
+ * @param argc 
+ * @param argv 
+ * @return Parser* 
+ */
 Parser* parseArgs(int argc, char* argv[]) {
     int i = 0;
     Parser * parser = parser_constructor();
@@ -197,6 +115,9 @@ Parser* parseArgs(int argc, char* argv[]) {
     return parser;
 }
 
+/***
+ * Fonction main
+*/
 int main(int argc, char *argv[]) {
     Parser *parser = parseArgs(argc,argv);
     launch(parser);
